@@ -8,15 +8,15 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Routing from '../Routing/Routing';
 
 
+
 function Files() {
     return (
         <>
             <CssBaseline />
-        <ResponsiveDrawer />
-        <FloatingApp />
-        <Routing />
-        <Footer />
-
+            <ResponsiveDrawer />
+            <FloatingApp />
+            <Routing />
+            <Footer />
         </>
     )
 }

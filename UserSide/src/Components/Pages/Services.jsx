@@ -1,10 +1,12 @@
-import React from 'react';
-import { Box, Typography, Grid, Card, CardContent, Container } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Grid, Card, CardContent, Container, Chip, Divider, CardActions, Button } from '@mui/material';
 import AcUnitIcon from '@mui/icons-material/AcUnit';
 import BuildIcon from '@mui/icons-material/Build';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
 import { useTheme } from '@mui/material/styles';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const servicesList = [
   {
@@ -31,10 +33,33 @@ const servicesList = [
 
 const Services = () => {
   const theme = useTheme();
+  const [services, setServices] = useState([]);
+  const navigate = useNavigate()
+
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/services');
+        console.log('Response:', response.data.allServices);
+        // Add `expanded` state to each service
+        const servicesWithState = response.data.allServices.map((service) => ({
+          ...service,
+          expanded: false,
+        }));
+        setServices(servicesWithState);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchServices();
+  }, []);
+
 
   return (
     <Box sx={{ py: 8, backgroundColor: theme.palette.grey[100] }}>
-      <Container maxWidth="lg" margin="0">
+      <Container maxWidth="lg" margin="0" 
+      >
         <Typography
           variant="h2"
           align="center"
@@ -47,7 +72,7 @@ const Services = () => {
         >
           Our Services
         </Typography>
-
+ {/* demo services not changable */}
         <Grid container spacing={4}>
           {servicesList.map((service, index) => {
             const IconComponent = service.icon;
@@ -99,12 +124,15 @@ const Services = () => {
           })}
         </Grid>
 
+
+
+ {/* local text */}
         <Box sx={{ mt: 8 }}>
           <Typography variant="h4" align="center" gutterBottom>
             Why Choose Our AC Services?
           </Typography>
           <Grid container spacing={4} sx={{ mt: 2 }}>
-            <Grid  item xs={12} md={4}>
+            <Grid item xs={12} md={4}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
                 Experienced Technicians
               </Typography>
@@ -130,6 +158,86 @@ const Services = () => {
             </Grid>
           </Grid>
         </Box>
+
+        <Divider sx={{ my: 8 }} />
+        <Typography
+        mt={5}
+          variant="h2"
+          align="center"
+          gutterBottom
+          sx={{
+            fontWeight: 'bold',
+            mb: 6,
+            color: theme.palette.primary.main
+          }}
+        >
+          Our Services
+        </Typography>
+
+{/* services added by admin */}
+        <Grid container spacing={3} >
+          {services.map((service, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Card
+                sx={{
+                  height: '500px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'transform 0.5s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: theme.shadows[6],
+                  },
+                }}
+              >
+
+                <CardContent
+                  sx={{
+                    height: '100%',
+                    position: 'relative'
+                  }}
+                >
+                  <Box>
+                    <img
+                      src={`http://localhost:3000/${service.serviceImage}`}
+                      alt="serviceImage"
+                      style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius:'20px' }}
+                    />
+                  </Box>
+                  <Chip label={service.serviceType} color="gray" sx={{ my: 2 }} />
+                  <Typography
+                    gutterBottom
+                    variant="h5"
+                    component="h2"
+                    align="center"
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    {service.serviceName}
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary" align="center">
+
+                    {service.serviceDescription}
+
+                  </Typography>
+                  <CardActions>
+                  <Button
+                  onClick={()=>{navigate('/appointments') }}
+                  >take appoitmment</Button>
+                </CardActions>
+
+                  {/* <Typography variant="body1" color="text.secondary" align="center">
+                    {service.serviceType}
+                  </Typography> */}
+                </CardContent>
+
+             
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+
       </Container>
     </Box>
   );

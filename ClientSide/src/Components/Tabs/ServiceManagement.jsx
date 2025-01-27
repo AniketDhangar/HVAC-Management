@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// import { serviceAPI } from '../../services/api';
 import {
     Container,
     Paper,
@@ -20,61 +19,98 @@ import {
     Box,
     IconButton,
     Snackbar,
-    Alert
+    Alert,
+    Tab
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import moment from 'moment';
+
+
 
 const ServiceManagement = () => {
     const [services, setServices] = useState([]);
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedService, setSelectedService] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [notification, setNotification] = useState({
-        open: false,
-        message: '',
-        severity: 'success'
-    });
+    const [serviceImage, setServiceImage] = useState(null)
+    const [openDelete, setOpenDelete] = useState(false);
+    const [openUpdate, setOpenUpdate] = useState(false)
 
-    const [formData, setFormData] = useState({
-        sname: '',
-        sdescription: '',
-        stype: '',
-        visitingCharge: '',
-        serviceLogo: null
-    });
 
-    // Fetch services on component mount
-    // useEffect(() => {
-    //     fetchServices();
-    // }, []);
 
-    // const fetchServices = async () => {
-    //     try {
-    //         const response = await serviceAPI.getAllServices();
-    //         setServices(response.allServices || []);
-    //     } catch (error) {
-    //         showNotification('Error fetching services', 'error');
-    //     }
-    // };
+    //this function is used to fetch the services
+
+    const handleFormSubmit = async (e) => {
+
+        // e.preventDefault();
+        //this will give us the form data
+        //and we will send this data to the server
+        const formData = new FormData(e.target);
+
+        // fromEntries method is used to convert the form data into object
+        const reqFormData = Object.fromEntries(formData.entries());
+        console.log(reqFormData)
+        //this is the final data that we will send to the server
+        const finalReqData = { ...reqFormData, serviceImage: reqFormData.serviceImage };
+        console.log(finalReqData);
+
+        try {
+            const reqResult = await axios.post('http://localhost:3000/addservice', finalReqData,
+                {
+                    headers:
+                    {
+                        "Content-Type": "multipart/form-data"
+                    }
+                }
+            )
+            console.log(reqResult)  //this will give us the response from the server
+            alert("Service Added Successfully")
+        } catch (error) {
+            console.log(error)
+            alert("Error in Adding Service")
+        }
+
+    }
+
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                const response = await axios.get('http://localhost:3000/services');
+                console.log('responce====>', response.data.allServices)
+                setServices(response.data.allServices);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        fetchServices();
+    }, [])
+
+    const handleDeleteOpen = async () => {
+        setOpenDelete(true);
+    }
+    const handleDeleteClose = async () => {
+        setOpenDelete(false);
+    }
+    const handleUpdateOpen = () => {
+        setOpenUpdate(true)
+    }
+    const handleUpdateClose = () => {
+        setOpenUpdate(false)
+    }
+
+
+
 
     const handleOpenDialog = (service = null) => {
         if (service) {
             setSelectedService(service);
             setFormData({
-                sname: service.sname,
-                sdescription: service.sdescription,
-                stype: service.stype,
-                visitingCharge: service.visitingCharge,
-                serviceLogo: null // Can't pre-fill file input
-            });
-        } else {
-            setSelectedService(null);
-            setFormData({
-                sname: '',
-                sdescription: '',
-                stype: '',
-                visitingCharge: '',
-                serviceLogo: null
+                serviceName: service.serviceName,
+                serviceDescription: service.serviceDescription,
+                serviceType: service.serviceType,
+                serviceImage: service.serviceImage
             });
         }
         setOpenDialog(true);
@@ -85,71 +121,37 @@ const ServiceManagement = () => {
         setSelectedService(null);
     };
 
-    const handleInputChange = (e) => {
-        const { name, value, files } = e.target;
-        if (name === 'serviceLogo' && files) {
-            setFormData(prev => ({ ...prev, [name]: files[0] }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-    };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
 
+    const deleteService = async (e) => {
+
+        //here we set auto reload
+        window.location.reload();
+
+        //here we are deleting the service
         try {
-            const formDataToSend = new FormData();
-            Object.keys(formData).forEach(key => {
-                if (formData[key] !== null) {
-                    formDataToSend.append(key, formData[key]);
-                }
+            const deletedService = await axios.delete('http://localhost:3000/deleteservice', {
+                //here we are sending the id of the service that we want to delete
+                data: { _id: selectedService._id }
             });
-
-            if (selectedService) {
-                await serviceAPI.updateService(selectedService._id, formDataToSend);
-                showNotification('Service updated successfully');
-            } else {
-                await serviceAPI.createService(formDataToSend);
-                showNotification('Service created successfully');
-            }
-
-            handleCloseDialog();
-            fetchServices();
+            console.log(deletedService)
+            // alert("Service Deleted Successfully")
+            setOpenDelete(false);
+            toast.success("Removed")
         } catch (error) {
-            showNotification(error.response?.data?.message || 'Error processing service', 'error');
-        } finally {
-            setLoading(false);
+            console.log(error)
         }
-    };
+    }
 
-    const handleDelete = async (serviceId) => {
-        if (window.confirm('Are you sure you want to delete this service?')) {
-            try {
-                await serviceAPI.deleteService(serviceId);
-                showNotification('Service deleted successfully');
-                fetchServices();
-            } catch (error) {
-                showNotification('Error deleting service', 'error');
-            }
-        }
-    };
 
-    const showNotification = (message, severity = 'success') => {
-        setNotification({
-            open: true,
-            message,
-            severity
-        });
-    };
 
-    const handleCloseNotification = () => {
-        setNotification(prev => ({ ...prev, open: false }));
-    };
+
+
 
     return (
 
         <Paper maxWidth="lg" elevation={3} sx={{ p: 4 }}>
+
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Service Management
@@ -163,38 +165,97 @@ const ServiceManagement = () => {
                 </Button>
             </Box>
 
-            <TableContainer>
+            {/* <Box>
+
+                    services.map((service, index) => {
+                        return (
+                            <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+
+                                <img
+                                    src={`http://localhost:3000/${service.serviceImage}`}
+                                    alt="serviceImage"
+                                    style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                />
+                                <Typography variant="h6" component="h2" gutterBottom>
+                                    {service.serviceName}
+                                </Typography>
+                                <Typography variant="h6" component="h2" gutterBottom>
+                                    {service.serviceDescription}
+                                </Typography>
+                                <Typography variant="h6" component="h2" gutterBottom>
+                                    {service.serviceType}
+                                </Typography>
+                               <IconButton
+        color="primary"
+        onClick={() => handleOpenDialog(service)}
+    >
+        <EditIcon />
+    </IconButton>
+    <IconButton
+        color="error"
+        onClick={() => handleDelete(service._id)}
+    >
+        <DeleteIcon />
+    </IconButton> 
+                              <img
+                                    src={`http://localhost:3000/${service.serviceImage}`}
+                                    alt="serviceImage"
+                                    style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                /> 
+                            </Box>
+                        {
+                    }
+                    )
+                } )
+           </Box>  */}
+            <TableContainer sx={{ fontSize: '20px' }}>
                 <Table>
-                    <TableHead>
+                    <TableHead sx={{ backgroundColor: 'gray' }} >
                         <TableRow>
-                            <TableCell>Service Name</TableCell>
-                            <TableCell>Type</TableCell>
-                            <TableCell>Description</TableCell>
-                            <TableCell>Visiting Charge</TableCell>
-                            <TableCell>Actions</TableCell>
+                            <TableCell sx={{ backgroundColor: 'lightgray', fontWeight: 'bold', fontSize: '20px' }}>Serial No.</TableCell>
+                            <TableCell sx={{ backgroundColor: 'lightgray', fontWeight: 'bold', fontSize: '20px' }}>Service Name</TableCell>
+                            <TableCell sx={{ backgroundColor: 'lightgray', fontWeight: 'bold', fontSize: '20px' }}>Type</TableCell>
+                            <TableCell sx={{ backgroundColor: 'lightgray', fontWeight: 'bold', fontSize: '20px' }}>Description</TableCell>
+                            {/* <TableCell sx={{ backgroundColor: 'lightgray', fontWeight: 'bold', fontSize: '20px' }}>Added on</TableCell> */}
+                            <TableCell sx={{ backgroundColor: 'lightgray', fontWeight: 'bold', fontSize: '20px' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {services.map((service) => (
                             <TableRow key={service._id}>
-                                <TableCell>{service.sname}</TableCell>
-                                <TableCell>{service.stype}</TableCell>
-                                <TableCell>{service.sdescription}</TableCell>
-                                <TableCell>{service.visitingCharge}</TableCell>
+                                {/* //this will display the service number */}
+                                <TableCell>{services.indexOf(service) + 1}</TableCell>
+                                <TableCell>{service.serviceName}</TableCell>
+                                <TableCell>{service.serviceType}</TableCell>
+                                <TableCell>{service.serviceDescription}</TableCell>
+                                {/* <TableCell>{moment(service.ServiceDate).format('DD-MM-YYYY HH:mm:ss')}</TableCell>   */}
+
                                 <TableCell>
                                     <IconButton
                                         color="primary"
-                                        onClick={() => handleOpenDialog(service)}
+                                        onClick={() => {
+                                            handleUpdateOpen()
+                                        }}
                                     >
                                         <EditIcon />
                                     </IconButton>
                                     <IconButton
                                         color="error"
-                                        onClick={() => handleDelete(service._id)}
+                                        onClick={() => {
+                                            handleDeleteOpen()
+                                            setSelectedService(service)
+                                        }}
                                     >
                                         <DeleteIcon />
                                     </IconButton>
                                 </TableCell>
+                                {/* <TableCell>
+                                    <img
+                                        src={`http://localhost:3000/${service.serviceImage}`}
+                                        alt="serviceImage"
+                                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                    />
+                                </TableCell> */}
                             </TableRow>
                         ))}
                     </TableBody>
@@ -204,24 +265,26 @@ const ServiceManagement = () => {
             {/* Add/Edit Service Dialog */}
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
                 <DialogTitle>
-                    {selectedService ? 'Edit Service' : 'Add New Service'}
+                    {'Add New Service'}
                 </DialogTitle>
-                <form onSubmit={handleSubmit}>
+                <form
+                    onSubmit={(e) => { handleFormSubmit(e) }}
+                >
                     <DialogContent>
                         <TextField
-                            name="sname"
+                            name="serviceName"
                             label="Service Name"
-                            value={formData.sname}
-                            onChange={handleInputChange}
+                            // value={formData.serviceName}
+                            // onChange={handleInputChange}
                             fullWidth
                             required
                             margin="normal"
                         />
                         <TextField
-                            name="sdescription"
+                            name="serviceDescription"
                             label="Description"
-                            value={formData.sdescription}
-                            onChange={handleInputChange}
+                            // value={formData.serviceDescription}
+                            // onChange={handleInputChange}
                             fullWidth
                             required
                             multiline
@@ -229,34 +292,27 @@ const ServiceManagement = () => {
                             margin="normal"
                         />
                         <TextField
-                            name="stype"
+                            name="serviceType"
                             label="Service Type"
-                            value={formData.stype}
-                            onChange={handleInputChange}
+                            // value={formData.serviceType}
+                            // onChange={handleInputChange}
                             select
                             fullWidth
                             required
                             margin="normal"
                         >
-                            <MenuItem value="AC Repair">AC Repair</MenuItem>
+                            <MenuItem value="Repair">Repair</MenuItem>
+                            <MenuItem value="Installation">Installation</MenuItem>
+                            <MenuItem value="Service">Service</MenuItem>
                             <MenuItem value="Heater Maintenance">Heater Maintenance</MenuItem>
-                            <MenuItem value="Plumbing">Plumbing</MenuItem>
-                            <MenuItem value="Electrical">Electrical</MenuItem>
                             <MenuItem value="Other">Other</MenuItem>
                         </TextField>
+
                         <TextField
-                            name="visitingCharge"
-                            label="Visiting Charge"
-                            value={formData.visitingCharge}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                            margin="normal"
-                        />
-                        <TextField
-                            name="serviceLogo"
+                            name="serviceImage"
                             type="file"
-                            onChange={handleInputChange}
+                            onChange={(e) => setServiceImage(e.target.files[0])}
+                            label="Service Image"
                             fullWidth
                             margin="normal"
                             InputLabelProps={{
@@ -268,8 +324,9 @@ const ServiceManagement = () => {
                         <Button onClick={handleCloseDialog}>Cancel</Button>
                         <Button
                             type="submit"
-                            variant="contained"
-                            color="primary"
+                            variant="outlined"
+                            color="error"
+
                             disabled={loading}
                         >
                             {loading ? 'Saving...' : 'Save'}
@@ -278,20 +335,61 @@ const ServiceManagement = () => {
                 </form>
             </Dialog>
 
-            {/* Notifications */}
-            <Snackbar
-                open={notification.open}
-                autoHideDuration={6000}
-                onClose={handleCloseNotification}
+
+
+
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={openDelete}
+                onClose={handleDeleteClose}
             >
-                <Alert
-                    onClose={handleCloseNotification}
-                    severity={notification.severity}
-                >
-                    {notification.message}
-                </Alert>
-            </Snackbar>
-        </Paper>
+                <DialogTitle>
+                    Delete ?
+                </DialogTitle>
+                <DialogContent>
+
+                    Are you sure you want to delete this service?
+
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteClose}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => {
+                            deleteService()
+                            handleDeleteClose()
+                        }}
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={openUpdate}
+                onClose={handleUpdateClose}
+                sx={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            >
+
+                <DialogTitle id="alert-dialog-title">
+                    Update ?
+                </DialogTitle>
+                <DialogContent>
+                    Are you sure want to update?
+
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='text'
+                        autoFocus
+                    >Yes</Button>
+                    <Button variant='text'
+                        onClick={() => { handleUpdateClose() }}
+                    >No</Button>
+                </DialogActions>
+            </Dialog>
+        </Paper >
 
     );
 };

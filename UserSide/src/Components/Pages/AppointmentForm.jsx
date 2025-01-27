@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import {
   Box,
   Button,
@@ -13,41 +14,38 @@ import {
   Select,
   Stack,
 } from '@mui/material';
-// import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
-// import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-const serviceTypes = [
-  'AC Installation',
-  'AC Repair',
-  'AC Maintenance',
-  'AC Gas Refill',
-  'AC Deep Cleaning',
-  'Emergency Repair',
-  'Parts Replacement',
-];
 
-const acTypes = [
-  'Split AC',
-  'Window AC',
-  'Portable AC',
-  'Central AC',
-  'Cassette AC',
-  'Tower AC',
-];
+
+const serviceTypes = ["Repair", "Installation", "Service", "Other", "Maintenance"];
 
 const AppointmentForm = () => {
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
+    userName: '',
+    userEmail: '',
+    userMobile: '',
+    userAddress: '',
     serviceType: '',
-    acType: '',
-    acBrand: '',
-    date: null,
-    time: null,
+    deviceBrand: '',
+    // appointmentDate:'',
     problemDescription: '',
   });
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/takeappoinment",
+        formData
+      );
+      alert("Service request submitted successfully!");
+      console.log(response.data);
+    } catch (error) {
+      alert("An error occurred while submitting the request.");
+      console.error(error);
+    }
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -57,70 +55,79 @@ const AppointmentForm = () => {
     }));
   };
 
-  // const handleDateChange = (newDate) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     date: newDate,
-  //   }));
-  // };
-
-  // const handleTimeChange = (newTime) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     time: newTime,
-  //   }));
-  // };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-   alert('Service Request submitted:', formData);
-    // Add your form submission logic here
-  };
-
   return (
     <Container component="main" maxWidth="md">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
         <Typography variant="h4" align="center" gutterBottom>
           Book AC Service
         </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+        <Box
+          component="form"
+          onSubmit={handleFormSubmit}
+          sx={{ mt: 2 }}
+        >
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
                 required
                 fullWidth
                 label="Full Name"
-                name="name"
-                value={formData.name}
+                name="userName"
+                value={formData.userName}
                 onChange={handleChange}
               />
             </Grid>
+
             <Grid item xs={12} sm={6}>
               <TextField
                 required
                 fullWidth
                 label="Phone Number"
-                name="phone"
-                value={formData.phone}
+                name="userMobile"
+                value={formData.userMobile}
                 onChange={handleChange}
               />
             </Grid>
+
+
             <Grid item xs={12} sm={6}>
               <TextField
+                required
                 fullWidth
                 label="Email"
-                name="email"
+                name="userEmail"
                 type="email"
-                value={formData.email}
+                value={formData.userEmail} 
                 onChange={handleChange}
               />
             </Grid>
+
+            {/* <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label=""
+                name="appointmentDate"
+                type="date"
+                value={formData.appointmentDate}
+                onChange={handleChange}
+              />
+            </Grid> */}
+
+            {/* 
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DateCalendar value={value} onChange={(newValue) => setValue(newValue)} />
+            </LocalizationProvider> */}
+
+
+
+
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
                 <InputLabel>Service Type</InputLabel>
                 <Select
                   name="serviceType"
-                  value={formData.serviceType}
+                  value={formData.serviceType || ""}
                   onChange={handleChange}
                   label="Service Type"
                 >
@@ -132,47 +139,30 @@ const AppointmentForm = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>AC Type</InputLabel>
-                <Select
-                  name="acType"
-                  value={formData.acType}
-                  onChange={handleChange}
-                  label="AC Type"
-                >
-                  {acTypes.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="AC Brand"
-                name="acBrand"
-                value={formData.acBrand}
+                label="Device Brand"
+                name="deviceBrand"
+                value={formData.deviceBrand}
                 onChange={handleChange}
               />
             </Grid>
+
             <Grid item xs={12}>
               <TextField
                 required
                 fullWidth
                 label="Service Address"
-                name="address"
+                name="userAddress"
                 multiline
                 rows={2}
-                value={formData.address}
+                value={formData.userAddress}
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              {/* Date and Time Pickers here if required */}
-            </Grid>
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -186,13 +176,9 @@ const AppointmentForm = () => {
               />
             </Grid>
           </Grid>
+
           <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-            <Button
-              fullWidth
-              type="submit"
-              variant="contained"
-              sx={{ py: 1.5 }}
-            >
+            <Button fullWidth type="submit" variant="contained" sx={{ py: 1.5 }}>
               Book Service
             </Button>
           </Stack>

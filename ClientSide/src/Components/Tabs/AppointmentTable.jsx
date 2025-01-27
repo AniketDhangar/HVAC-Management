@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
     Table,
     TableBody,
@@ -8,56 +9,31 @@ import {
     TableRow,
     Paper,
     Typography,
-    Box,
-    Chip
+    Box
 } from '@mui/material';
 
 const AppointmentTable = () => {
     const [appointments, setAppointments] = useState([]);
 
     useEffect(() => {
-        //  dummy data on component mount
-        const dummyData = [
-            {
-                _id: "1",
-                customerId: { name: "John Doe", mobile: "1234567890" },
-                sId: { sname: "AC Repair" },
-                appointmentDate: "2025-01-15T10:30:00Z",
-                appointmentStatus: "approved",
-                appointmentMsg: "Please ensure the technician arrives on time."
-            },
-            {
-                _id: "2",
-                customerId: { name: "Alice Smith", mobile: "9876543210" },
-                sId: { sname: "Plumbing Service" },
-                appointmentDate: "2025-01-20T14:00:00Z",
-                appointmentStatus: "waiting",
-                appointmentMsg: "Looking forward to the appointment."
-            },
-            {
-                _id: "3",
-                customerId: { name: "Bob Johnson", mobile: "1122334455" },
-                sId: { sname: "Electrical Work" },
-                appointmentDate: "2025-01-25T16:30:00Z",
-                appointmentStatus: "cancelled",
-                appointmentMsg: "The appointment has been cancelled due to unforeseen circumstances."
+        const fetchAppointments = async () => {
+            try {
+                const response = await axios.get("http://localhost:3000/getappoinment");
+                console.table(response.data.appointments);
+                setAppointments(response.data.appointments || []);
+            } catch (error) {
+                alert("Error fetching appointments");
+                console.error(error);
+                setAppointments([]);
             }
-        ];
-        setAppointments(dummyData);
-    }, []);
+        };
+        const intervalId = setInterval(() => {
+            fetchAppointments();
+        }, 0);
 
-    const getStatusColor = (status) => {
-        switch (status?.toLowerCase()) {
-            case 'approved':
-                return 'success';
-            case 'cancelled':
-                return 'error';
-            case 'waiting':
-                return 'warning';
-            default:
-                return 'default';
-        }
-    };
+        return () => clearInterval(intervalId);
+    },
+        []);
 
     return (
         <Box sx={{ p: 3 }}>
@@ -70,45 +46,35 @@ const AppointmentTable = () => {
                         <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                             <TableCell><b>Customer Name</b></TableCell>
                             <TableCell><b>Contact</b></TableCell>
-                            <TableCell><b>Service</b></TableCell>
-                            <TableCell><b>Date</b></TableCell>
-                            <TableCell><b>Time</b></TableCell>
-                            <TableCell><b>Status</b></TableCell>
+                            <TableCell><b>Email</b></TableCell>
+                            <TableCell><b>Device Brand</b></TableCell>
+                            <TableCell><b>Service Type</b></TableCell>
+                            {/* <TableCell><b>on Date</b></TableCell> */}
+                            <TableCell><b>Address</b></TableCell>
                             <TableCell><b>Message</b></TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {appointments.map((appointment) => (
-                            <TableRow key={appointment._id}>
-                                <TableCell>
-                                    {appointment.customerId?.name || 'N/A'}
-                                </TableCell>
-                                <TableCell>
-                                    {appointment.customerId?.mobile || 'N/A'}
-                                </TableCell>
-
-                                <TableCell>
-                                    {appointment.sId?.sname || 'N/A'}
-                                </TableCell>
-                                <TableCell>
-                                    {new Date(appointment.appointmentDate).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell>
-                                    {new Date(appointment.appointmentDate).toLocaleTimeString()}
-                                </TableCell>
-
-                                <TableCell>
-                                    <Chip
-                                        label={appointment.appointmentStatus}
-                                        color={getStatusColor(appointment.appointmentStatus)}
-                                        size="small"
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    {appointment.appointmentMsg || 'No message'}
+                        {appointments.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={7} align="center">
+                                    No appointments found.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            appointments.map((appointment) => (
+                                <TableRow key={appointment._id}>
+                                    <TableCell>{appointment.userName || "N/A"}</TableCell>
+                                    <TableCell>{appointment.userMobile || "N/A"}</TableCell>
+                                    <TableCell>{appointment.userEmail || "N/A"}</TableCell>
+                                    <TableCell>{appointment.deviceBrand || "N/A"}</TableCell>
+                                    <TableCell>{appointment.serviceType || "N/A"}</TableCell>
+                                    {/* <TableCell>{(appointment.appointmentDate)}</TableCell> */}
+                                    <TableCell>{appointment.userAddress || "N/A"}</TableCell>
+                                    <TableCell>{appointment.problemDescription || "N/A"}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </TableContainer>

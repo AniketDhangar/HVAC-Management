@@ -37,6 +37,8 @@ function MainPage() {
     const [selectedTab, setSelectedTab] = useState(0);
 
     const handleTabChange = (tabName) => {
+     
+
         const tabIndex = {
             'Dashboard': 0,
             'Appointments': 1,
@@ -51,7 +53,7 @@ function MainPage() {
         <Box>
             <Navbar onTabChange={handleTabChange} />
             <Container maxWidth="xl">
-                <Paper elevation={3} sx={{ mt: 3 }}>
+                <Paper  sx={{ mt: 3 }}>
                     <TabPanel value={selectedTab} index={0}>
                         <Typography variant="h5">Dashboard Content</Typography>
                     </TabPanel>
